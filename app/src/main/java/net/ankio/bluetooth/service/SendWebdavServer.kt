@@ -67,13 +67,17 @@ class SendWebdavServer : Service() {
         //扫描结果回调
         scanCallback = object : ScanCallback() {
             override fun onScanFailed(errorCode: Int) {
+                //errorCode=1;Fails to start scan as BLE scan with the same settings is already started by the app.
+                //errorCode=2;Fails to start scan as app cannot be registered.
+                //errorCode=3;Fails to start scan due an internal error
+                //errorCode=4;Fails to start power optimized scan as this feature is not supported
                 Log.i(tag, "onScanFailed callback---->$errorCode")
             }
             override fun onScanResult(callbackType: Int, result: ScanResult) {
+                stopScan()
                 if(deviceAddress != "" && reportMac == result.device.address) {
                     if(Date().time - reportTime < (scanInterval - 10 * 1000)) {
                         Log.i(tag, getTimeString(reportTime) + " Already report: ${result.device.address}")
-                        stopScan()
                         return
                     }
                 }
@@ -87,7 +91,6 @@ class SendWebdavServer : Service() {
                     reportMac = result.device.address
                     reportTime = Date().time
                     Log.i(tag, "Found device: ${result.device.address}")
-                    stopScan()
                     try {
                         val tempData = ByteUtils.bytesToHexString(scanRecord)?:""
                         val rawData = "0x" + changeData(tempData.uppercase())
@@ -153,13 +156,17 @@ class SendWebdavServer : Service() {
             ) {
                 Log.i(tag, "start scan check failed")
             }
-            val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE).build()
+            val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
             val filterList: MutableList<ScanFilter> = ArrayList()
-            filterList.add(ScanFilter.Builder().build())
+            if(deviceAddress != "") {
+                filterList.add(ScanFilter.Builder().setDeviceAddress(deviceAddress).build())
+            } else {
+                filterList.add(ScanFilter.Builder().build())
+            }
             bluetoothAdapter.bluetoothLeScanner.startScan(filterList, settings, scanCallback)
             Handler(Looper.getMainLooper()).postDelayed({
+                stopScan()
+                Thread.sleep(500)
                 startScan()
             },scanInterval )
         } else {

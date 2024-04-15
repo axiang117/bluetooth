@@ -1,7 +1,12 @@
 package net.ankio.bluetooth.ui
 
 
+import android.Manifest
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,6 +15,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -20,6 +26,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.permissionx.guolindev.PermissionX
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +49,14 @@ import java.util.ArrayList
 
 
 class MainActivity : BaseActivity() {
+    //默认蓝牙适配器
+    private lateinit var defaultAdapter: BluetoothAdapter
+    //注册开启蓝牙  注意在onCreate之前注册
+    private val activityResult =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) showMsg(if (defaultAdapter.isEnabled) "蓝牙已打开" else "蓝牙未打开")
+        }
+    private fun showMsg(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 
     //视图绑定
     private lateinit var binding: ActivityMainBinding
@@ -84,6 +99,16 @@ class MainActivity : BaseActivity() {
             start<ScanActivity>()
         }
         onViewCreated()
+
+        try {
+            defaultAdapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            //检查权限
+            requestPermission()
+        } catch (e: NullPointerException) {
+            e.message?.let { Log.e(tag, it) }
+            showMsg(getString(R.string.unsupported_bluetooth))
+            finish()
+        }
     }
 
     /**
@@ -159,6 +184,33 @@ class MainActivity : BaseActivity() {
         super.onResume()
         setMacBluetoothData()
         serverConnect()
+    }
+
+    /**
+     * 请求权限
+     */
+    private fun requestPermission() {
+        val arrayList = ArrayList<String>()
+        arrayList.add(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayList.add(Manifest.permission.BLUETOOTH_SCAN)
+            arrayList.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+
+        PermissionX.init(this).permissions(arrayList)
+            .request { allGranted, _, _ -> if (allGranted) openBluetooth() else showMsg(getString(R.string.no_permission)) }
+    }
+
+
+    /**
+     * 打开蓝牙
+     */
+    private fun openBluetooth() = defaultAdapter.let {
+        if (!it.isEnabled)
+            activityResult.launch(
+                Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            )
     }
 
     /**
