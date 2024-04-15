@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "net.ankio.bluetooth"
-        minSdk 24
+        minSdk 23
         targetSdk 33
         versionCode 6
         versionName "1.0.4"
@@ -22,10 +22,34 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE"))
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+        debug {
+            storeFile file(System.getenv("KEYSTORE"))
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
+            debuggable false
+            jniDebuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            debuggable true
+            jniDebuggable true
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
@@ -79,8 +103,8 @@ dependencies {
     implementation 'dev.rikka.rikkax.html:html-ktx:1.1.2'
     //webdav
     implementation 'com.github.thegrizzlylabs:sardine-android:0.8'
-    //匿名统计
-    implementation 'com.flurry.android:analytics:14.2.0@aar'
+//    //匿名统计
+//    implementation 'com.flurry.android:analytics:14.2.0@aar'
     //gson
     implementation 'com.google.code.gson:gson:2.10.1'
     //异步操作

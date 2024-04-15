@@ -5,7 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.text.TextUtils
 import android.widget.Toast
-import com.flurry.android.FlurryAgent
+//import com.flurry.android.FlurryAgent
 import com.quickersilver.themeengine.ThemeEngine
 import net.ankio.bluetooth.utils.HookUtils
 import net.ankio.bluetooth.utils.LocaleDelegate
@@ -42,12 +42,12 @@ open class App : Application() {
         //设置语言
         LocaleDelegate.defaultLocale = getLocale()
 
-        //匿名统计
-        if(SpUtils.getBoolean("app_center_analyze",true)){
-            FlurryAgent.Builder()
-                .withLogEnabled(true)
-                .build(this, "JS6H7TJJDMQRDDMWG55C")
-        }
+//        //匿名统计
+//        if(SpUtils.getBoolean("app_center_analyze",true)){
+//            FlurryAgent.Builder()
+//                .withLogEnabled(true)
+//                .build(this, "JS6H7TJJDMQRDDMWG55C")
+//        }
 
     }
 

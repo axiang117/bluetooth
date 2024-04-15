@@ -1,3 +1,3 @@
 package net.ankio.bluetooth.bluetooth
 
-data class BluetoothData(val data: String, val mac: String, val rssi: String)
+data class BluetoothData(val data: String, val mac: String, val rssi: String, val time: String)
