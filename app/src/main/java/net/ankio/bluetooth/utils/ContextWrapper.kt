@@ -3,7 +3,7 @@ package net.ankio.bluetooth.utils
 import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.os.LocaleList
+//import android.os.LocaleList
 import java.util.Locale
 
 object  ContextWrapper{
@@ -12,9 +12,9 @@ object  ContextWrapper{
         val res: Resources = mContext.resources
         val configuration: Configuration = res.configuration
         configuration.setLocale(newLocale)
-        val localeList = LocaleList(newLocale)
-        LocaleList.setDefault(localeList)
-        configuration.setLocales(localeList)
+//        val localeList = LocaleList(newLocale)
+//        LocaleList.setDefault(localeList)
+//        configuration.setLocales(localeList)
         return mContext.createConfigurationContext(configuration)
     }
 }

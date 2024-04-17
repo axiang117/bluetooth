@@ -252,6 +252,7 @@ class ScanActivity : BaseActivity() {
     private fun requestPermission() {
         val arrayList = ArrayList<String>()
         arrayList.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        arrayList.add(Manifest.permission.ACCESS_COARSE_LOCATION)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayList.add(Manifest.permission.BLUETOOTH_SCAN)
