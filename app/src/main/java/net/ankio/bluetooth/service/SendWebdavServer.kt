@@ -74,7 +74,6 @@ class SendWebdavServer : Service() {
                 Log.i(tag, "onScanFailed callback---->$errorCode")
             }
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                stopScan()
                 if(deviceAddress != "" && reportMac == result.device.address) {
                     if(Date().time - reportTime < (scanInterval - 10 * 1000)) {
                         Log.i(tag, getTimeString(reportTime) + " Already report: ${result.device.address}")
@@ -87,6 +86,7 @@ class SendWebdavServer : Service() {
                             || (deviceCompany != "" && companyName == deviceCompany))){
                     return
                 }
+                stopScan()
                 Thread(Runnable Thread@{
                     reportMac = result.device.address
                     reportTime = Date().time
