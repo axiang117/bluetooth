@@ -16,6 +16,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
+import android.os.PowerManager.WakeLock
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -43,6 +45,9 @@ class SendWebdavServer : Service() {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var scanCallback: ScanCallback
+
+    private lateinit var wakeLock: WakeLock
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isRunning = true
         startScan()
@@ -51,6 +56,10 @@ class SendWebdavServer : Service() {
     override fun onCreate() {
 
         super.onCreate()
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock =
+            pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, SendWebdavServer::class.java.name)
+        wakeLock.acquire()
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
@@ -140,6 +149,7 @@ class SendWebdavServer : Service() {
     }
 
     override fun onDestroy() {
+        wakeLock.release();
         super.onDestroy()
         stopScan()
         Log.i(tag, "Server destroy")
