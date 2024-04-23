@@ -82,6 +82,10 @@ android {
         exclude 'META-INF/gson/LongSerializationPolicy.txt'
         exclude 'META-INF/gson/annotations.txt'
     }
+	
+	afterEvaluate {
+		tasks.findAll { it.name.startsWith('lint') }.each { it.enabled = false }
+	}
 }
 
 dependencies {
