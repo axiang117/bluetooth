@@ -37,6 +37,7 @@ class SendWebdavServer : Service() {
         private const val CHANNEL_ID = "ForegroundServiceChannel"
         private var reportMac = ""
         private var reportTime = 0L
+        private var reportData = ""
     }
     private val tag = "BluetoothScanService"
     private var deviceAddress = SpUtils.getString("pref_mac2", "") // 指定的蓝牙设备MAC地址
@@ -83,26 +84,36 @@ class SendWebdavServer : Service() {
                 Log.i(tag, "onScanFailed callback---->$errorCode")
             }
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                if(deviceAddress != "" && reportMac == result.device.address) {
-                    if(Date().time - reportTime < (scanInterval - 10 * 1000)) {
-                        Log.i(tag, getTimeString(reportTime) + " Already report: ${result.device.address}")
+                val scanRecord = result.scanRecord?.bytes ?: return
+                if(deviceCompany != "") {
+                    val companyName = BluetoothData(this@SendWebdavServer).parseManufacturerData(scanRecord)?:""
+                    if(companyName != deviceCompany) {
                         return
                     }
                 }
-                val scanRecord = result.scanRecord?.bytes ?: return
-                val companyName = BluetoothData(this@SendWebdavServer).parseManufacturerData(scanRecord)?:""
-                if(!((deviceAddress != "" && result.device.address == deviceAddress)
-                            || (deviceCompany != "" && companyName == deviceCompany))){
-                    return
+                if(deviceAddress != "") {
+                    if(result.device.address != deviceAddress) {
+                        return
+                    }
                 }
-                stopScan()
+                val tempData = ByteUtils.bytesToHexString(scanRecord)?:""
+                val rawData = "0x" + changeData(tempData.uppercase())
+                if(reportMac == result.device.address) {
+                    if(Date().time - reportTime < 1000) {
+                        Log.i(tag, getTimeString(reportTime) + " Last report: ${result.device.address}")
+                        return
+                    }
+                    if(reportData == rawData) {
+                        Log.i(tag, getTimeString(reportTime) + " Same report: ${result.device.address}")
+                        return
+                    }
+                }
+                Log.i(tag, "Found device: ${result.device.address}")
+                reportMac = result.device.address
+                reportTime = Date().time
+                reportData = rawData
                 Thread(Runnable Thread@{
-                    reportMac = result.device.address
-                    reportTime = Date().time
-                    Log.i(tag, "Found device: ${result.device.address}")
                     try {
-                        val tempData = ByteUtils.bytesToHexString(scanRecord)?:""
-                        val rawData = "0x" + changeData(tempData.uppercase())
                         WebdavUtils(
                             SpUtils.getString("webdav_username", ""),
                             SpUtils.getString("webdav_password", "")
@@ -166,7 +177,7 @@ class SendWebdavServer : Service() {
             ) {
                 Log.i(tag, "start scan check failed")
             }
-            val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
+            val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             val filterList: MutableList<ScanFilter> = ArrayList()
             if(deviceAddress != "") {
                 filterList.add(ScanFilter.Builder().setDeviceAddress(deviceAddress).build())
@@ -176,7 +187,7 @@ class SendWebdavServer : Service() {
             bluetoothAdapter.bluetoothLeScanner.startScan(filterList, settings, scanCallback)
             Handler(Looper.getMainLooper()).postDelayed({
                 stopScan()
-                Thread.sleep(500)
+                Thread.sleep(100)
                 startScan()
             },scanInterval )
         } else {
